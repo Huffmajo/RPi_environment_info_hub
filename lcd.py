@@ -2,9 +2,8 @@
 from Adafruit_CharLCD import Adafruit_CharLCD
 from time import sleep, strftime
 from datetime import datetime
-import socket
+import socket, Adafruit_DHT, requests, json
 import RPi.GPIO as GPIO
-import Adafruit_DHT
 
 # initialize GPIO for buttons
 GPIO.setmode(GPIO.BCM)
@@ -16,6 +15,12 @@ temp_gpio = 17
 
 # initialize LCD (must specify pinout and dimensions)
 lcd = Adafruit_CharLCD(rs=26, en=19, d4=13, d5=6, d6=5, d7=11, cols=16, lines=2)
+
+# initialize data for weather API
+api_key = '0d77ec45d15bebe907b5c11b6194067e'
+root_url = 'http://api.openweathermap.org/data/2.5/weather?appid='
+city_id = '5713376'
+full_url = root_url + api_key + '&id=' + city_id
 
 # function to get IP info
 def get_ip_address():
@@ -38,7 +43,11 @@ def get_local_temp():
 
 	# return error if DHT11 fails to detect humidity
 	if humidity is not None and temp is not None:
-		result = 'Temp: {0:0.1f}C\nHumidity: {1:0.1f}%'.format(temp, humidity)
+
+		# convert celsius to fahrenheit
+		temp = temp * (9/5) + 32
+
+		result = 'Temp: {0:0.1f}F\nHumidity: {1:0.1f}%'.format(temp, humidity)
 	else:
 		result = '***ERROR***\nNo temps read'
 
@@ -47,6 +56,26 @@ def get_local_temp():
 
 	# return tuple of weather data strings
 	return result
+
+# function to get local weather from OpenWeather API
+def get_api_weather():
+	# request API for weather data
+	response = requests.get(full_url)
+
+	# store response of weather data
+	respo = response.json()
+	weather = respo['main']
+
+	# pull the weather data we need
+	api_temp = weather['temp']
+	api_humid = weather['humidity']
+
+	# convert temp from kelvin to fahrenheit
+	api_temp = (api_temp - 273) * 1.8 + 32
+
+	api_result = 'Temp: {0:0.1f}F\nHumidity: {1:0.1f}%'.format(api_temp, api_humid)
+
+	return api_result
 
 # main control flow
 display = 0
@@ -57,27 +86,37 @@ try:
 		button_press = not GPIO.input(18)
 		if button_press:
 			display += 1
-			if display > 2:
+			if display > 3:
 				display = 0
 
-		lcd.clear()
 		# display IP info
 		if display == 0:
 			ip = get_ip_address()
+			lcd.clear()
 			lcd.message('IP ADDRESS\n')
 			lcd.message('{}'.format(ip))
 			sleep(1)
 		# display date and time
 		elif display == 1:
 			current_time = get_current_time()
+			lcd.clear()
 			lcd.message('TIME\n')
 			lcd.message(current_time)
 			sleep(1)
 		# display measured weather info
 		elif display == 2:
 			measured_temp = get_local_temp()
+			lcd.clear()
 			lcd.message(measured_temp)
 			sleep(3)
+		# display weather from API
+		elif display == 3:
+			api_temp = get_api_weather()
+			lcd.clear()
+			lcd.message(api_temp)
+			# 2 minute wait to not flood API with requests
+			# will fix this later
+			sleep(120)
 
 except KeyboardInterrupt:
 	print('\nCTRL-C pressed. Program exiting...')
