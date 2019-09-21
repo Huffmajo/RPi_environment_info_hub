@@ -1,8 +1,9 @@
 #!/usr/bin/python
+
 from Adafruit_CharLCD import Adafruit_CharLCD
-from time import sleep, strftime
 from datetime import datetime
-import socket, Adafruit_DHT, requests, json
+from time import strftime, sleep
+import time, socket, Adafruit_DHT, requests, json
 import RPi.GPIO as GPIO
 
 # initialize GPIO for buttons
@@ -47,9 +48,9 @@ def get_local_temp():
 		# convert celsius to fahrenheit
 		temp = temp * (9/5) + 32
 
-		result = 'Temp: {0:0.1f}F\nHumidity: {1:0.1f}%'.format(temp, humidity)
+		result = 'Inside: {0:0.1f}F'.format(temp)
 	else:
-		result = '***ERROR***\nNo temps read'
+		result = 'Inside: ERROR'
 
 	# clear screen before posting the data
 	lcd.clear()
@@ -73,50 +74,52 @@ def get_api_weather():
 	# convert temp from kelvin to fahrenheit
 	api_temp = (api_temp - 273) * 1.8 + 32
 
-	api_result = 'Temp: {0:0.1f}F\nHumidity: {1:0.1f}%'.format(api_temp, api_humid)
+	api_result = 'Outside: {0:0.1f}F'.format(api_temp)
 
 	return api_result
 
 # main control flow
 display = 0
+prev_ms = 0
+prev_temps = 0
+timer_switch_screen = 250
+timer_IP_refresh = 1000
+timer_temps_refresh = 120000
 
 try:
 	while True:
-		# allow button presses to modify display
-		button_press = not GPIO.input(18)
-		if button_press:
-			display += 1
-			if display > 3:
-				display = 0
+		ms = int(round(time.time() * 1000))
 
-		# display IP info
+		# allow button presses to modify display
+		button_1_press = not GPIO.input(18)
+
+		# button1 switches screens
+		if ((button_1_press) and (ms - prev_ms > timer_switch_screen)):
+			display += 1
+			if display > 1:
+				display = 0
+			prev_ms = int(round(time.time() * 1000))
+
+		# display IP and datetime
 		if display == 0:
-			ip = get_ip_address()
-			lcd.clear()
-			lcd.message('IP ADDRESS\n')
-			lcd.message('{}'.format(ip))
-			sleep(1)
-		# display date and time
+			if (ms - prev_ms > timer_IP_refresh):
+				ip = get_ip_address()
+				current_time = get_current_time()
+				lcd.clear()
+				lcd.message('{}'.format(ip))
+				lcd.message('\n')
+				lcd.message(current_time)
+				prev_ms = ms
+		# display inside/outside temps
 		elif display == 1:
-			current_time = get_current_time()
-			lcd.clear()
-			lcd.message('TIME\n')
-			lcd.message(current_time)
-			sleep(1)
-		# display measured weather info
-		elif display == 2:
-			measured_temp = get_local_temp()
-			lcd.clear()
-			lcd.message(measured_temp)
-			sleep(3)
-		# display weather from API
-		elif display == 3:
-			api_temp = get_api_weather()
-			lcd.clear()
-			lcd.message(api_temp)
-			# 2 minute wait to not flood API with requests
-			# will fix this later
-			sleep(120)
+			if (ms - prev_temps > timer_temps_refresh):
+				inside_temp = get_local_temp()
+				outside_temp = get_api_weather()
+				lcd.clear()
+				lcd.message(inside_temp)
+				lcd.message('\n')
+				lcd.message(outside_temp)
+				prev_temps = ms
 
 except KeyboardInterrupt:
 	print('\nCTRL-C pressed. Program exiting...')
