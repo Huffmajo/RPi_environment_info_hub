@@ -9,13 +9,14 @@ import RPi.GPIO as GPIO
 # initialize GPIO for buttons
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # initialize DHT11 sensor for local temperature and humidity
 temp_sensor = Adafruit_DHT.DHT11
-temp_gpio = 17
+temp_gpio = 10
 
 # initialize LCD (must specify pinout and dimensions)
-lcd = Adafruit_CharLCD(rs=26, en=19, d4=13, d5=6, d6=5, d7=11, cols=16, lines=2)
+lcd = Adafruit_CharLCD(rs=27, en=17, d4=14, d5=4, d6=3, d7=2, cols=16, lines=2)
 
 # initialize data for weather API
 api_key = '0d77ec45d15bebe907b5c11b6194067e'
@@ -91,7 +92,8 @@ try:
 		ms = int(round(time.time() * 1000))
 
 		# allow button presses to modify display
-		button_1_press = not GPIO.input(18)
+		button_1_press = not GPIO.input(15)
+		button_2_press = not GPIO.input(18)
 
 		# button1 switches screens
 		if ((button_1_press) and (ms - prev_ms > timer_switch_screen)):
