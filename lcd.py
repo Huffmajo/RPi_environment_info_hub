@@ -3,13 +3,14 @@
 from Adafruit_CharLCD import Adafruit_CharLCD
 from datetime import datetime
 from time import strftime, sleep
-import time, socket, Adafruit_DHT, requests, json
+import time, socket, Adafruit_DHT, requests, json, subprocess
 import RPi.GPIO as GPIO
 
 # initialize GPIO for buttons
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # initialize DHT11 sensor for local temperature and humidity
 temp_sensor = Adafruit_DHT.DHT11
@@ -34,11 +35,12 @@ def get_ip_address():
 
 # function to get time
 def get_current_time():
-	return datetime.now().strftime('%b %d %H:%M:%S')
+	return datetime.now().strftime('%A\n%b %d %I:%M:%S')
 
 # function to get humidity and temperature from DHT11
 def get_local_temp():
 	# let user know temps are being measured
+	lcd.clear()
 	lcd.message('Measuring local\ntemp/humidity...')
 
 	humidity, temp = Adafruit_DHT.read_retry(temp_sensor, temp_gpio)
@@ -79,8 +81,22 @@ def get_api_weather():
 
 	return api_result
 
+# process for shutting down system
+def shutdown():
+	# display shutdown message
+	lcd.clear()
+	lcd.message("Shutting down.\nOne moment")
+
+	# wait a moment
+	sleep(5)
+	lcd.clear()
+	lcd.message("Safe for \npower down")
+
+	# shutdown system
+	subprocess.call(['sudo', 'shutdown', '-h', 'now'], shell=False)
+
 # main control flow
-display = 0
+display = -1
 prev_ms = 0
 prev_temps = 0
 timer_switch_screen = 250
@@ -92,8 +108,13 @@ try:
 		ms = int(round(time.time() * 1000))
 
 		# allow button presses to modify display
-		button_1_press = not GPIO.input(15)
-		button_2_press = not GPIO.input(18)
+		button_1_press = not GPIO.input(18)
+		button_2_press = not GPIO.input(15)
+		button_power = not GPIO.input(22)
+
+		# check for shutdown button press
+		if (button_power):
+			shutdown()
 
 		# button1 switches screens
 		if ((button_1_press) and (ms - prev_ms > timer_switch_screen)):
@@ -102,14 +123,19 @@ try:
 				display = 0
 			prev_ms = int(round(time.time() * 1000))
 
-		# display IP and datetime
-		if display == 0:
+		# welcome screen
+		if display == -1:
+			if (ms - prev_ms > timer_IP_refresh):
+				lcd.clear()
+				lcd.message("Welcome to\nAIM-HUB")
+				prev_ms = ms
+
+		# display datetime
+		elif display == 0:
 			if (ms - prev_ms > timer_IP_refresh):
 				ip = get_ip_address()
 				current_time = get_current_time()
 				lcd.clear()
-				lcd.message('{}'.format(ip))
-				lcd.message('\n')
 				lcd.message(current_time)
 				prev_ms = ms
 		# display inside/outside temps
