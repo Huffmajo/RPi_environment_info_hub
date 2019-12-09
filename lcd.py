@@ -25,7 +25,7 @@ root_url = 'http://api.openweathermap.org/data/2.5/weather?appid='
 city_id = '5713376'
 full_url = root_url + api_key + '&id=' + city_id
 
-# function to get IP info
+# returns current ip address
 def get_ip_address():
 	return[
 		(s.connect(('8.8.8.8', 53)),
@@ -33,11 +33,11 @@ def get_ip_address():
 		s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]
 	][0][1]
 
-# function to get time
+# returns date, day and time
 def get_current_time():
 	return datetime.now().strftime('%A\n%b %d %I:%M:%S')
 
-# function to get humidity and temperature from DHT11
+# returns humidity and temperature from DHT11
 def get_local_temp():
 	# let user know temps are being measured
 	lcd.clear()
@@ -45,23 +45,16 @@ def get_local_temp():
 
 	humidity, temp = Adafruit_DHT.read_retry(temp_sensor, temp_gpio)
 
-	# return error if DHT11 fails to detect humidity
-	if humidity is not None and temp is not None:
-
-		# convert celsius to fahrenheit
-		temp = temp * (9/5) + 32
-
-		result = 'Inside: {0:0.1f}F'.format(temp)
-	else:
-		result = 'Inside: ERROR'
+	# convert celsius to fahrenheit
+	temp = temp * (9/5) + 32
 
 	# clear screen before posting the data
 	lcd.clear()
 
-	# return tuple of weather data strings
-	return result
+	# return list of temperature and humidity
+	return [temp, humidity]
 
-# function to get local weather from OpenWeather API
+# returns outside local weather from OpenWeatherMap API
 def get_api_weather():
 	# request API for weather data
 	response = requests.get(full_url)
@@ -96,7 +89,7 @@ def shutdown():
 	subprocess.call(['sudo', 'shutdown', '-h', 'now'], shell=False)
 
 # main control flow
-display = -1
+display = -1 # start with welcome screen
 prev_ms = 0
 prev_temps = 0
 timer_switch_screen = 250
@@ -127,27 +120,60 @@ try:
 		if display == -1:
 			if (ms - prev_ms > timer_IP_refresh):
 				lcd.clear()
-				lcd.message("Welcome to\nAIM-HUB")
+				lcd.message("Welcome to AIM\nPress any button")
+
+				# button 2 also exits welcome screen
+				if (button_2_press):
+					display += 1
 				prev_ms = ms
 
-		# display datetime
+		# display datetime or IP
 		elif display == 0:
+			function = 1
 			if (ms - prev_ms > timer_IP_refresh):
-				ip = get_ip_address()
-				current_time = get_current_time()
-				lcd.clear()
-				lcd.message(current_time)
+				# display date and time
+				if function == 1:
+					current_time = get_current_time()
+					lcd.clear()
+					lcd.message(current_time)
+				elif function == -1:
+					ip = get_ip_address()
+					lcd.clear()
+					lcd.message("IP address:\n{}".format(ip))
 				prev_ms = ms
-		# display inside/outside temps
+
+			# button 2 switches function
+			if ((button_2_press) and (ms - prev_ms > timer_switch_screen)):
+				function *= -1
+				prev_ms = int(round(time.time() * 1000))
+
+		# display inside/outside temps and humidity
 		elif display == 1:
+			function = 1
+
 			if (ms - prev_temps > timer_temps_refresh):
-				inside_temp = get_local_temp()
+				inside_temp, inside_humidity = get_local_temp()
 				outside_temp = get_api_weather()
-				lcd.clear()
-				lcd.message(inside_temp)
-				lcd.message('\n')
-				lcd.message(outside_temp)
+
+				# display temps
+				if function == 1:
+					lcd.clear()
+					inside_temp_print = 'Inside: {0:0.1f}F'.format(inside_temp)
+					lcd.message(inside_temp_print)
+					lcd.message('\n')
+					lcd.message(outside_temp)
+				# display humidity
+				elif function == -1:
+					lcd.clear()
+					inside_temp_print = 'Inside: {0:0.1f}%'.format(inside_humidity)
+					lcd.message(inside_temp_print)
+					lcd.message('\n')
+					lcd.message(outside_temp)
 				prev_temps = ms
+
+			# button 2 switches function
+			if (button_2_press):
+				function *= -1
 
 except KeyboardInterrupt:
 	print('\nCTRL-C pressed. Program exiting...')
