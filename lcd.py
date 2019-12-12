@@ -11,6 +11,7 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(7, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # initialize DHT11 sensor for local temperature and humidity
 temp_sensor = Adafruit_DHT.DHT11
@@ -63,16 +64,7 @@ def get_api_weather():
 	respo = response.json()
 	weather = respo['main']
 
-	# pull the weather data we need
-	api_temp = weather['temp']
-	api_humid = weather['humidity']
-
-	# convert temp from kelvin to fahrenheit
-	api_temp = (api_temp - 273) * 1.8 + 32
-
-	api_result = 'Outside: {0:0.1f}F'.format(api_temp)
-
-	return api_result
+	return respo
 
 # process for shutting down system
 def shutdown():
@@ -88,6 +80,13 @@ def shutdown():
 	# shutdown system
 	subprocess.call(['sudo', 'shutdown', '-h', 'now'], shell=False)
 
+# test print all weather info
+def testPrintAll():
+	print ("CURRENT TEMPS @ {}".format(get_current_time()))
+	print ("Outside temp: {}F".format(outside_temp))
+	print ("Outside humidity: {}%".format(outside_humidity))
+	print ("Outside recent rain: {}mm\n".format(rain_3h))
+
 # main control flow
 display = -1 # start with welcome screen
 prev_ms = 0
@@ -95,10 +94,38 @@ prev_temps = 0
 timer_switch_screen = 250
 timer_IP_refresh = 1000
 timer_temps_refresh = 120000
+inside_temp = 0
+inside_humidity = 0
+outside_temp = 0
+outside_humidity = 0
+rain_3h = 0
 
 try:
 	while True:
 		ms = int(round(time.time() * 1000))
+
+		# refresh weather information every 5 minutes
+		if ((ms - prev_temps > timer_temps_refresh) or prev_temps == 0):
+				# get inside temperature and humidity
+				inside_temp, inside_humidity = get_local_temp()
+				
+				# get outside weather info
+				outside_weather = get_api_weather()
+				main = outside_weather['main']
+
+				# pull the weather data we need
+				outside_temp = main['temp']
+				outside_humidity = main['humidity']
+
+				# convert temp from kelvin to fahrenheit
+				outside_temp = (outside_temp - 273) * 1.8 + 32
+
+				# get recent rain levels
+				rain = outside_weather['rain']
+				rain_3h = rain['3h']
+
+
+				prev_temps = ms
 
 		# allow button presses to modify display
 		button_1_press = not GPIO.input(18)
@@ -152,15 +179,14 @@ try:
 			function = 1
 
 			if (ms - prev_temps > timer_temps_refresh):
-				inside_temp, inside_humidity = get_local_temp()
-				outside_temp = get_api_weather()
-
+				
 				# display temps
 				if function == 1:
 					lcd.clear()
 					inside_temp_print = 'Inside: {0:0.1f}F'.format(inside_temp)
 					lcd.message(inside_temp_print)
 					lcd.message('\n')
+					outside_temp_print = 'Outside: {0:0.1f}F'.format(outside_temp)
 					lcd.message(outside_temp)
 				# display humidity
 				elif function == -1:
@@ -168,7 +194,8 @@ try:
 					inside_temp_print = 'Inside: {0:0.1f}%'.format(inside_humidity)
 					lcd.message(inside_temp_print)
 					lcd.message('\n')
-					lcd.message(outside_temp)
+					outside_humidity_print = 'Outside: {0:0.1f}F'.format(outside_humidity)
+					lcd.message(outside_humidity_print)
 				prev_temps = ms
 
 			# button 2 switches function
