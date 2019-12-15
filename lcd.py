@@ -98,7 +98,8 @@ inside_temp = 0
 inside_humidity = 0
 outside_temp = 0
 outside_humidity = 0
-rain_3h = 0
+rain_1h = 0
+description = 'None'
 
 try:
 	while True:
@@ -108,7 +109,7 @@ try:
 		if ((ms - prev_temps > timer_temps_refresh) or prev_temps == 0):
 				# get inside temperature and humidity
 				inside_temp, inside_humidity = get_local_temp()
-				
+
 				# get outside weather info
 				outside_weather = get_api_weather()
 				main = outside_weather['main']
@@ -120,10 +121,15 @@ try:
 				# convert temp from kelvin to fahrenheit
 				outside_temp = (outside_temp - 273) * 1.8 + 32
 
-				# get recent rain levels
-				rain = outside_weather['rain']
-				rain_3h = rain['3h']
+				# get weather description
+				weather_main = outside_weather['weather']
+				description = weather_main[0]['main']
 
+				# get recent rain levels
+				# ADD THIS BACK IN LATER
+				#rain = outside_weather['rain']
+				#rain_1h = rain['1h']
+				rain_1h = 0
 
 				prev_temps = ms
 
@@ -139,19 +145,21 @@ try:
 		# button1 switches screens
 		if ((button_1_press) and (ms - prev_ms > timer_switch_screen)):
 			display += 1
-			if display > 1:
+			if display > 2:
 				display = 0
 			prev_ms = int(round(time.time() * 1000))
+			print('Button_1_press_success. Display: {}'.format(display))
 
 		# welcome screen
 		if display == -1:
-			if (ms - prev_ms > timer_IP_refresh):
+			if (ms - prev_ms > timer_switch_screen):
 				lcd.clear()
-				lcd.message("Welcome to AIM\nPress any button")
+				lcd.message("***ENVIRO-HUB***\nPress any button")
 
 				# button 2 also exits welcome screen
 				if (button_2_press):
 					display += 1
+					print('Button_2_press_success. Display: {}'.format(display))
 				prev_ms = ms
 
 		# display datetime or IP
@@ -171,23 +179,62 @@ try:
 
 			# button 2 switches function
 			if ((button_2_press) and (ms - prev_ms > timer_switch_screen)):
-				function *= -1
+				if function == 1:
+					function = -1
+				else:
+					function = 1
 				prev_ms = int(round(time.time() * 1000))
+				print('Button_2_press_success. Display: {}'.format(display))
+				print('Function: {}'.format(function))
 
 		# display inside/outside temps and humidity
 		elif display == 1:
 			function = 1
 
-			if (ms - prev_temps > timer_temps_refresh):
-				
+			if (ms - prev_ms > timer_IP_refresh):
+
 				# display temps
+#				if function == 1:
+				lcd.clear()
+				inside_temp_print = 'Inside: {0:0.1f}F'.format(inside_temp)
+				lcd.message(inside_temp_print)
+				lcd.message('\n')
+				outside_temp_print = 'Outside: {0:0.1f}F'.format(outside_temp)
+				lcd.message(outside_temp_print)
+
+				# display humidity
+#				elif function == -1:
+#					lcd.clear()
+#					inside_temp_print = 'Inside: {0:0.1f}%'.format(inside_humidity)
+#					lcd.message(inside_temp_print)
+#					lcd.message('\n')
+#					outside_humidity_print = 'Outside: {0:0.1f}F'.format(outside_humidity)
+#					lcd.message(outside_humidity_print)
+				prev_ms = ms
+
+			# button 2 switches function
+			if ((button_2_press) and (ms - prev_ms > timer_switch_screen)):
+				if function == 1:
+					function = -1
+				else:
+					function = 1
+				prev_ms = int(round(time.time() * 1000))
+				print('Button_2_press_success. Display: {}'.format(display))
+				print('Function: {}'.format(function))
+
+		# display outside weather info
+		elif display == 2:
+			function = 1
+
+			if (ms - prev_ms > timer_IP_refresh):
+
+				# display weather description and rainfall
 				if function == 1:
 					lcd.clear()
-					inside_temp_print = 'Inside: {0:0.1f}F'.format(inside_temp)
-					lcd.message(inside_temp_print)
+					lcd.message(description)
 					lcd.message('\n')
-					outside_temp_print = 'Outside: {0:0.1f}F'.format(outside_temp)
-					lcd.message(outside_temp)
+					rain_print = 'Rainfall: {0:0.1f}mm'.format(rain_1h)
+					lcd.message(rain_print)
 				# display humidity
 				elif function == -1:
 					lcd.clear()
@@ -196,11 +243,16 @@ try:
 					lcd.message('\n')
 					outside_humidity_print = 'Outside: {0:0.1f}F'.format(outside_humidity)
 					lcd.message(outside_humidity_print)
-				prev_temps = ms
+				prev_ms = ms
 
 			# button 2 switches function
 			if (button_2_press):
-				function *= -1
+				if function == 1:
+					function = -1
+				else:
+					function = 1
+				print('Button_2_press_success. Display: {}'.format(display))
+				print('Function: {}'.format(function))
 
 except KeyboardInterrupt:
 	print('\nCTRL-C pressed. Program exiting...')
