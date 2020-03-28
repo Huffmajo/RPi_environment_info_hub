@@ -6,14 +6,19 @@ from time import strftime, sleep
 import time, socket, Adafruit_DHT, requests, json, subprocess
 import RPi.GPIO as GPIO
 
+# set gpio pins for i/o
+left_button_gpio = 18
+right_button_gpio = 15
+power_button_gpio = 22
+solenoid_gpio = 25
+
 # initialize GPIO for buttons
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP) # left button
-GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_UP) # right button
-GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP) # power button
-GPIO.setup(7, GPIO.IN, pull_up_down=GPIO.PUD_UP) # 
-GPIO.setup(25, GPIO.OUT) # water valve solenoid
-GPIO.output(25, GPIO.LOW) # start valve closed
+GPIO.setup(left_button_gpio, GPIO.IN, pull_up_down=GPIO.PUD_UP) # left button
+GPIO.setup(right_button_gpio, GPIO.IN, pull_up_down=GPIO.PUD_UP) # right button
+GPIO.setup(power_button_gpio, GPIO.IN, pull_up_down=GPIO.PUD_UP) # power button
+GPIO.setup(solenoid_gpio, GPIO.OUT) # water valve solenoid
+GPIO.output(solenoid_gpio, GPIO.LOW) # start valve closed
 
 # initialize DHT11 sensor for local temperature and humidity
 temp_sensor = Adafruit_DHT.DHT11
@@ -83,11 +88,39 @@ def shutdown():
 	subprocess.call(['sudo', 'shutdown', '-h', 'now'], shell=False)
 
 # test print all weather info
-def testPrintAll():
+def test_print_all():
 	print ("CURRENT TEMPS @ {}".format(get_current_time()))
 	print ("Outside temp: {}F".format(outside_temp))
 	print ("Outside humidity: {}%".format(outside_humidity))
 	print ("Outside recent rain: {}mm\n".format(rain_3h))
+
+def record_weather():
+	# create or open file
+	weatherRecord = open("weather.txt", "a")
+
+	# get date and time
+	time = get_current_time()
+
+	# get inside weather
+	temp_in, humid_in = get_local_temp()
+
+	# get outside weather
+	weather_out = get_api_weather()
+	main = weather_out['main']
+	temp_out = (main['temp'] - 273) * 1.8 + 32
+	humid_out = main['humidity']
+
+	# get weather description
+	weather_out =  weather_out['weather']
+	weather_desc = weather_out[0]['main']
+
+	# get rainfall
+
+
+	# write formatted data to file
+
+	# close file
+	weatherRecord.close()
 
 # main control flow
 display = -1 # start with welcome screen
@@ -128,35 +161,36 @@ try:
 				description = weather_main[0]['main']
 
 				# get recent rain levels
-				# ADD THIS BACK IN LATER
-				#rain = outside_weather['rain']
-				#rain_1h = rain['1h']
-				rain_1h = 0
+				if outsidew_weather['rain'] != null:
+					rain = outside_weather['rain']
+					rain_1h = rain['1h']
+				else:
+					rain_1h = 0
 
 				prev_temps = ms
 
 		# allow button presses to modify display
-		button_1_press = not GPIO.input(18)
-		button_2_press = not GPIO.input(15)
-		button_power = not GPIO.input(22)
+		left_button_press = not GPIO.input(left_button_gpio)
+		right_button_press = not GPIO.input(right_button_gpio)
+		power_button_press = not GPIO.input(power_button_gpio)
 
 		# test for solenoid triggering
-		if (button_2_press):
-			GPIO.output(25, GPIO.HIGH)
+		if (right_button_press):
+			GPIO.output(solenoid_gpio, GPIO.HIGH)
 		else:
-			GPIO.output(25, GPIO.LOW)
+			GPIO.output(solenoid_gpio, GPIO.LOW)
 
 		# check for shutdown button press
-		if (button_power):
+		if (power_button_press):
 			shutdown()
 
 		# button1 switches screens
-		if ((button_1_press) and (ms - prev_ms > timer_switch_screen)):
+		if ((left_button_press) and (ms - prev_ms > timer_switch_screen)):
 			display += 1
 			if display > 2:
 				display = 0
 			prev_ms = int(round(time.time() * 1000))
-			print('Button_1_press_success. Display: {}'.format(display))
+			print('Left_button_press_success. Display: {}'.format(display))
 
 		# welcome screen
 		if display == -1:
@@ -164,10 +198,10 @@ try:
 				lcd.clear()
 				lcd.message("***ENVIRO-HUB***\nPress any button")
 
-				# button 2 also exits welcome screen
-				if (button_2_press):
+				# right button also exits welcome screen
+				if (right_button_press):
 					display += 1
-					print('Button_2_press_success. Display: {}'.format(display))
+					print('Right_button_press_success. Display: {}'.format(display))
 				prev_ms = ms
 
 		# display datetime or IP
@@ -185,14 +219,14 @@ try:
 					lcd.message("IP address:\n{}".format(ip))
 				prev_ms = ms
 
-			# button 2 switches function
-			if ((button_2_press) and (ms - prev_ms > timer_switch_screen)):
+			# right button switches function
+			if ((right_button_press) and (ms - prev_ms > timer_switch_screen)):
 				if function == 1:
 					function = -1
 				else:
 					function = 1
 				prev_ms = int(round(time.time() * 1000))
-				print('Button_2_press_success. Display: {}'.format(display))
+				print('Right_button_press_success. Display: {}'.format(display))
 				print('Function: {}'.format(function))
 
 		# display inside/outside temps and humidity
@@ -202,7 +236,6 @@ try:
 			if (ms - prev_ms > timer_IP_refresh):
 
 				# display temps
-#				if function == 1:
 				lcd.clear()
 				inside_temp_print = 'Inside: {0:0.1f}F'.format(inside_temp)
 				lcd.message(inside_temp_print)
@@ -210,24 +243,16 @@ try:
 				outside_temp_print = 'Outside: {0:0.1f}F'.format(outside_temp)
 				lcd.message(outside_temp_print)
 
-				# display humidity
-#				elif function == -1:
-#					lcd.clear()
-#					inside_temp_print = 'Inside: {0:0.1f}%'.format(inside_humidity)
-#					lcd.message(inside_temp_print)
-#					lcd.message('\n')
-#					outside_humidity_print = 'Outside: {0:0.1f}F'.format(outside_humidity)
-#					lcd.message(outside_humidity_print)
 				prev_ms = ms
 
-			# button 2 switches function
-			if ((button_2_press) and (ms - prev_ms > timer_switch_screen)):
+			# right button switches function
+			if ((Right_button_press) and (ms - prev_ms > timer_switch_screen)):
 				if function == 1:
 					function = -1
 				else:
 					function = 1
 				prev_ms = int(round(time.time() * 1000))
-				print('Button_2_press_success. Display: {}'.format(display))
+				print('Right_button_press_success. Display: {}'.format(display))
 				print('Function: {}'.format(function))
 
 		# display outside weather info
@@ -253,13 +278,13 @@ try:
 					lcd.message(outside_humidity_print)
 				prev_ms = ms
 
-			# button 2 switches function
-			if (button_2_press):
+			# right buttons switches function
+			if (right_button_press):
 				if function == 1:
 					function = -1
 				else:
 					function = 1
-				print('Button_2_press_success. Display: {}'.format(display))
+				print('Right_button_press_success. Display: {}'.format(display))
 				print('Function: {}'.format(function))
 
 except KeyboardInterrupt:
