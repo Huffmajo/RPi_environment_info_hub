@@ -8,10 +8,12 @@ import RPi.GPIO as GPIO
 
 # initialize GPIO for buttons
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-GPIO.setup(7, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP) # left button
+GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_UP) # right button
+GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP) # power button
+GPIO.setup(7, GPIO.IN, pull_up_down=GPIO.PUD_UP) # 
+GPIO.setup(25, GPIO.OUT) # water valve solenoid
+GPIO.output(25, GPIO.LOW) # start valve closed
 
 # initialize DHT11 sensor for local temperature and humidity
 temp_sensor = Adafruit_DHT.DHT11
@@ -137,6 +139,12 @@ try:
 		button_1_press = not GPIO.input(18)
 		button_2_press = not GPIO.input(15)
 		button_power = not GPIO.input(22)
+
+		# test for solenoid triggering
+		if (button_2_press):
+			GPIO.output(25, GPIO.HIGH)
+		else:
+			GPIO.output(25, GPIO.LOW)
 
 		# check for shutdown button press
 		if (button_power):
