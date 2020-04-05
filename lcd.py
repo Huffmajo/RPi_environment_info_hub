@@ -94,6 +94,7 @@ def test_print_all():
 	print ("Outside humidity: {}%".format(outside_humidity))
 	print ("Outside recent rain: {}mm\n".format(rain_3h))
 
+# get and write weather info to text log
 def record_weather():
 	# create or open file
 	weatherRecord = open("weather.txt", "a")
@@ -115,9 +116,14 @@ def record_weather():
 	weather_desc = weather_out[0]['main']
 
 	# get rainfall
+	if outside_weather['rain'] != null:
+		rain = outside_weather['rain']
+		rain_1h = rain['1h']
+	else:
+		rain_1h = 0
 
-
-	# write formatted data to file
+	# write all info to file
+	weatherRecord.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(time, weather_desc, temp_in, temp_out, humid_in, humid_out, rain_1h));
 
 	# close file
 	weatherRecord.close()
@@ -161,7 +167,7 @@ try:
 				description = weather_main[0]['main']
 
 				# get recent rain levels
-				if outsidew_weather['rain'] != null:
+				if outside_weather['rain'] != null:
 					rain = outside_weather['rain']
 					rain_1h = rain['1h']
 				else:
