@@ -130,8 +130,8 @@ def record_weather():
 display = -1 # start with welcome screen
 prev_ms = 0
 prev_temps = 0
-timer_switch_screen = 250
-timer_IP_refresh = 1000
+quarter_sec = 250
+one_sec = 1000
 timer_temps_refresh = 120000
 inside_temp = 0
 inside_humidity = 0
@@ -145,24 +145,49 @@ left_button_press = not GPIO.input(left_button_gpio)
 right_button_press = not GPIO.input(right_button_gpio)
 power_button_press = not GPIO.input(power_button_gpio)
 
+# set scheduled time
+setHour = 6
+setMinute = 0
+setDuration = 30
+now = datetime.now()
+
 try:
 	while True:
-		ms = int(round(time.time() * 1000))
-
-		if (ms - prev_ms > timer_switch_screen):
-			lcd.clear();
-			lcd.message("***SCREEN ONE***\n")
-			prev_ms = ms
-
-		# test for solenoid triggering
-		if (right_button_press):
-			GPIO.output(solenoid_gpio, GPIO.HIGH)
-		else:
-			GPIO.output(solenoid_gpio, GPIO.LOW)
-
 		# check for shutdown button press
 		if (power_button_press):
 			shutdown()
+
+		# increment counter
+		ms = int(round(time.time() * 1000))
+
+		# show test screen every 1/4 second
+		if (ms - prev_ms > quarter_sec):
+			lcd.clear()
+			lcd.message("***SCREEN ONE***\n")
+			prev_ms = ms
+
+
+		# get time every minute
+		if (ms - prev_ms > one_sec):
+			now = datetime.now()
+			print(now.strftime("%I:%M:%S")) # USED FOR DEBUG
+			prev_ms = ms
+
+		# check for set time
+		if now.hour == setHour and now.minute == setMinute: # add check for rainfall and temperature
+			lcd.clear()
+			lcd.message("***VALVE OPEN***")
+			print("Valve opened at {} for {} minutes".format(now, setDuration))
+
+			# open valve
+			GPIO.output(solenoid_gpio, GPIO.HIGH)
+
+			# wait duration
+			sleep(60 * setDuration)
+
+			# close valve
+			GPIO.output(solenoid_gpio, GPIO.LOW)
+			print("Valve closed at {}".format(datetime.now()))
 
 except KeyboardInterrupt:
 	print('\nCTRL-C pressed. Program exiting...')
