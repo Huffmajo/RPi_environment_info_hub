@@ -95,7 +95,7 @@ def test_print_all():
 	print ("Outside recent rain: {}mm\n".format(rain_3h))
 
 # get and write weather info to text log
-def record_weather():
+def record_weather(watered):
 	# create or open file
 	weatherRecord = open("weather.txt", "a")
 
@@ -121,7 +121,7 @@ def record_weather():
 		rain_1h = 0
 
 	# write all info to file
-	weatherRecord.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(time, weather_desc, temp_in, temp_out, humid_in, humid_out, rain_1h));
+	weatherRecord.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(time, watered, weather_desc, temp_in, temp_out, humid_in, humid_out, rain_1h));
 
 	# close file
 	weatherRecord.close()
@@ -139,6 +139,7 @@ outside_temp = 0
 outside_humidity = 0
 rain_1h = 0
 description = 'None'
+wateredToday = False
 
 # allow button presses to modify display
 left_button_press = not GPIO.input(left_button_gpio)
@@ -148,7 +149,7 @@ power_button_press = not GPIO.input(power_button_gpio)
 # set scheduled time
 setHour = 6
 setMinute = 0
-setDuration = 30
+setDuration = 15
 now = datetime.now()
 
 try:
@@ -160,18 +161,24 @@ try:
 		# increment counter
 		ms = int(round(time.time() * 1000))
 
-		# show test screen every 1/4 second
-		if (ms - prev_ms > quarter_sec):
-			lcd.clear()
-			lcd.message("***SCREEN ONE***\n")
-			prev_ms = ms
-
-
-		# get time every minute
+		# show test screen every second
 		if (ms - prev_ms > one_sec):
+			lcd.clear()
+			lcd.message(get_current_time())
 			now = datetime.now()
-			print(now.strftime("%I:%M:%S")) # USED FOR DEBUG
+			print(now) # USED FOR DEBUG
 			prev_ms = ms
+
+		# override watering
+		if (right_button_press):
+			lcd.clear()
+			lcd.message("***VALVE OPEN***")
+			print("Valve opened at {} for {} minutes". format(datetime.now(), setDuration))
+			GPIO.output(solenoid_gpio, GPIO.HIGH) # open valve
+			sleep(60 * setDuration)
+			GPIO.output(solenoid_gpio, GPIO.HIGH) # close valve
+			lcd.message("***VALVE OPEN***")
+			print("Valve closed at {}". format(datetime.now()))
 
 		# check for set time
 		if now.hour == setHour and now.minute == setMinute: # add check for rainfall and temperature
@@ -187,10 +194,16 @@ try:
 
 			# close valve
 			GPIO.output(solenoid_gpio, GPIO.LOW)
+			lcd.message("**VALVE CLOSED**")
 			print("Valve closed at {}".format(datetime.now()))
+
+			wateredToday = True
+
+			record_weather(wateredToday)
 
 except KeyboardInterrupt:
 	print('\nCTRL-C pressed. Program exiting...')
 
 finally:
 	lcd.clear()
+	GPIO.output(solenoid_gpio, GPIO.LOW)
