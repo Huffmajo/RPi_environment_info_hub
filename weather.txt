@@ -1,0 +1,1 @@
+Time	Watered	Weather	Temp Inside	Temp Outside	Humidity Inside	Humidity Outside	 Rainfall(mm in last hour)

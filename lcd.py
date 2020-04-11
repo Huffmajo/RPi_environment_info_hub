@@ -76,23 +76,33 @@ def get_api_weather():
 # process for shutting down system
 def shutdown():
 	# display shutdown message
-	lcd.clear()
-	lcd.message("Shutting down.\nOne moment")
+	lcd_message("Shutting down\nOne moment")
 
 	# wait a moment
 	sleep(5)
-	lcd.clear()
-	lcd.message("Safe for \npower down")
+
+	# update message
+	lcd_message("Safe for \npower down")
 
 	# shutdown system
 	subprocess.call(['sudo', 'shutdown', '-h', 'now'], shell=False)
 
-# test print all weather info
-def test_print_all():
-	print ("CURRENT TEMPS @ {}".format(get_current_time()))
-	print ("Outside temp: {}F".format(outside_temp))
-	print ("Outside humidity: {}%".format(outside_humidity))
-	print ("Outside recent rain: {}mm\n".format(rain_3h))
+# write message to LCD1602
+def lcd_message(message):
+	lcd.clear()
+	lcd.message(message)
+
+# open solenoid valve
+def open_valve():
+	lcd_message("***VALVE OPEN***")
+	print("Valve opened at {} for {} minutes". format(datetime.now(), duration))
+	GPIO.output(solenoid_gpio, GPIO.HIGH)
+
+# close solenoid valve
+def close_valve():
+	lcd_message("**VALVE CLOSED**")
+	print("Valve closed at {}". format(datetime.now(), duration))
+	GPIO.output(solenoid_gpio, GPIO.LOW)
 
 # get and write weather info to text log
 def record_weather(watered):
@@ -129,31 +139,29 @@ def record_weather(watered):
 # main control flow
 display = -1 # start with welcome screen
 prev_ms = 0
-prev_temps = 0
 quarter_sec = 250
 one_sec = 1000
-timer_temps_refresh = 120000
-inside_temp = 0
-inside_humidity = 0
-outside_temp = 0
-outside_humidity = 0
-rain_1h = 0
+one_min = 60000
+two_min = 120000
 description = 'None'
 wateredToday = False
 
-# allow button presses to modify display
-left_button_press = not GPIO.input(left_button_gpio)
-right_button_press = not GPIO.input(right_button_gpio)
-power_button_press = not GPIO.input(power_button_gpio)
-
-# set scheduled time
-setHour = 6
-setMinute = 0
-setDuration = 15
+# set scheduled times
+amHour = 6
+amMinute = 0
+pmHour = 18
+pmMinute = 0
+duration = 15
 now = datetime.now()
 
 try:
 	while True:
+		# allow button presses to modify display
+		left_button_press = not GPIO.input(left_button_gpio)
+		right_button_press = not GPIO.input(right_button_gpio)
+		power_button_press = not GPIO.input(power_button_gpio)
+
+
 		# check for shutdown button press
 		if (power_button_press):
 			shutdown()
@@ -161,49 +169,33 @@ try:
 		# increment counter
 		ms = int(round(time.time() * 1000))
 
-		# show test screen every second
-		if (ms - prev_ms > one_sec):
-			lcd.clear()
-			lcd.message(get_current_time())
+		# update once a minute
+		if (ms - prev_ms > one_min):
+			# show current time
+			lcd_message(get_current_time())
 			now = datetime.now()
 			print(now) # USED FOR DEBUG
+
+			# check for scheduled water time
+			if (now.hour == amHour and now.minute == amMinute) or (now.hour == pmHour and now.minute == pmMinute):
+				open_valve()
+				sleep(60 * duration)
+				close_valve()
+
+				wateredToday = True
+				record_weather(wateredToday)
+				wateredToday = False
+
 			prev_ms = ms
 
 		# override watering
 		if (right_button_press):
-			lcd.clear()
-			lcd.message("***VALVE OPEN***")
-			print("Valve opened at {} for {} minutes". format(datetime.now(), setDuration))
-			GPIO.output(solenoid_gpio, GPIO.HIGH) # open valve
-			sleep(60 * setDuration)
-			GPIO.output(solenoid_gpio, GPIO.HIGH) # close valve
-			lcd.message("***VALVE OPEN***")
-			print("Valve closed at {}". format(datetime.now()))
-
-		# check for set time
-		if now.hour == setHour and now.minute == setMinute: # add check for rainfall and temperature
-			lcd.clear()
-			lcd.message("***VALVE OPEN***")
-			print("Valve opened at {} for {} minutes".format(now, setDuration))
-
-			# open valve
-			GPIO.output(solenoid_gpio, GPIO.HIGH)
-
-			# wait duration
-			sleep(60 * setDuration)
-
-			# close valve
-			GPIO.output(solenoid_gpio, GPIO.LOW)
-			lcd.message("**VALVE CLOSED**")
-			print("Valve closed at {}".format(datetime.now()))
-
-			wateredToday = True
-
-			record_weather(wateredToday)
+			open_valve()
+			sleep(60 * duration)
+			close_valve()
 
 except KeyboardInterrupt:
 	print('\nCTRL-C pressed. Program exiting...')
 
 finally:
-	lcd.clear()
-	GPIO.output(solenoid_gpio, GPIO.LOW)
+	close_valve()
