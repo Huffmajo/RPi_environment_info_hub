@@ -110,7 +110,7 @@ def record_weather(watered):
 	weatherRecord = open("weather.txt", "a")
 
 	# get date and time
-	time = get_current_time()
+	time = datetime.now().strftime('%A %b %d %I:%M:%S')
 
 	# get inside weather
 	temp_in, humid_in = get_local_temp()
@@ -118,20 +118,20 @@ def record_weather(watered):
 	# get outside weather
 	weather_out = get_api_weather()
 	temp_out = (weather_out['main']['temp'] - 273) * 1.8 + 32
-	humid_out = ['main']['humidity']
+	humid_out = weather_out['main']['humidity']
 
 	# get weather description
 	weather_desc = weather_out['weather'][0]['description']
 
 	# get rainfall
 	if "rain" in weather_out:
-		rain = outside_weather['rain']
 		rain_1h = outside_weather['rain']['1h']
 	else:
 		rain_1h = 0
 
 	# write all info to file
-	weatherRecord.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(time, watered, weather_desc, temp_in, temp_out, humid_in, humid_out, rain_1h));
+	weatherRecord.write("{}\t{}\t{}\t\t{}\t\t{}\t\t{}\t\t{}\n".format(time, watered, weather_desc, temp_in, temp_out, humid_in, humid_out, rain_1h));
+	print("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(time, watered, weather_desc, temp_in, temp_out, humid_in, humid_out, rain_1h));
 
 	# close file
 	weatherRecord.close()
@@ -151,7 +151,7 @@ amHour = 6
 amMinute = 0
 pmHour = 18
 pmMinute = 0
-duration = 15
+duration = 1
 now = datetime.now()
 
 try:

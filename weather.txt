@@ -1,1 +1,2 @@
-Time	Watered	Weather	Temp Inside	Temp Outside	Humidity Inside	Humidity Outside	 Rainfall(mm in last hour)
+Time			Watered	Weather		Temp Inside	Temp Outside	Humidity Inside	Humidity Outside	 Rainfall(mm in last hour)
+Sunday Apr 12 09:04:36	True	clear sky	52.0		54.158		37.0		26
