@@ -125,12 +125,15 @@ def record_weather(watered):
 
 	# get rainfall
 	if "rain" in weather_out:
-		rain_1h = outside_weather['rain']['1h']
+		if weather_out['rain']['1h'] >= 0:
+			rain_1h = 0
+		else:
+			rain_1h = weather_out['rain']['1h']
 	else:
 		rain_1h = 0
 
 	# write all info to file
-	weatherRecord.write("{}\t{}\t{}\t\t{}\t\t{}\t\t{}\t\t{}\n".format(time, watered, weather_desc, temp_in, temp_out, humid_in, humid_out, rain_1h));
+	weatherRecord.write("{}\t\t{}\t{}\t{}\t\t{}\t\t{}\t\t{}\n".format(time, watered, weather_desc, temp_in, temp_out, humid_in, humid_out, rain_1h));
 	print("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(time, watered, weather_desc, temp_in, temp_out, humid_in, humid_out, rain_1h));
 
 	# close file
@@ -151,7 +154,7 @@ amHour = 6
 amMinute = 0
 pmHour = 18
 pmMinute = 0
-duration = 1
+duration = 30
 now = datetime.now()
 
 try:

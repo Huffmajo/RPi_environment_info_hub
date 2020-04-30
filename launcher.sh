@@ -4,5 +4,5 @@
 
 cd /
 cd home/pi/scripts/RPi_environment_info_hub
-sudo python lcd.py
+python startup.py
 cd /
