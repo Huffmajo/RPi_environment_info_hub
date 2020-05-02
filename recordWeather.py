@@ -81,18 +81,15 @@ def record_weather(watered):
 	temp_out = (weather_out['main']['temp'] - 273) * 1.8 + 32
 	humid_out = weather_out['main']['humidity']
 
+	# get weather class
+	weather_main = weather_out['weather'][0]['main']
+
 	# get weather description
 	weather_desc = weather_out['weather'][0]['description']
 
-	# get rainfall
-	if "rain" in weather_out:
-		rain_1h = outside_weather['rain']['1h']
-	else:
-		rain_1h = 0
-
 	# write all info to file
-	weatherRecord.write("{},{},{},{},{},{},{}\n".format(time, watered, weather_desc, temp_in, temp_out, humid_in, humid_out, rain_1h));
-	print("{},{},{},{},{},{},{}\n".format(time, watered, weather_desc, temp_in, temp_out, humid_in, humid_out, rain_1h));
+	weatherRecord.write("{},{},{},{},{},{},{}\n".format(time, watered, weather_main, weather_desc, temp_in, temp_out, humid_in, humid_out));
+	print("{},{},{},{},{},{},{}\n".format(time, watered, weather_main, weather_desc, temp_in, temp_out, humid_in, humid_out));
 
 	# close file
 	weatherRecord.close()

@@ -19,3 +19,4 @@ Friday Apr 24 06:30:52		True	broken clouds	52.0		61.196		39.0		72
 Saturday Apr 25 06:30:24		True	overcast clouds	52.0		52.682		39.0		93
 Saturday Apr 25 06:30:34		True	clear sky	52.0		62.456		40.0		44
 Thursday Apr 30 12:19:30,False,broken clouds,52.0,59.432,38.0,58
+Saturday May 02 02:16:11,False,Rain,moderate rain,50.0,53.438,39.0
