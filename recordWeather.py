@@ -66,7 +66,7 @@ def get_api_weather():
 	return respo
 
 # get and write weather info to text log
-def record_weather(watered):
+def record_weather():
 	# create or open file
 	weatherRecord = open("weather.txt", "a")
 
@@ -88,11 +88,11 @@ def record_weather(watered):
 	weather_desc = weather_out['weather'][0]['description']
 
 	# write all info to file
-	weatherRecord.write("{},{},{},{},{},{},{}\n".format(time, watered, weather_main, weather_desc, temp_in, temp_out, humid_in, humid_out));
-	print("{},{},{},{},{},{},{}\n".format(time, watered, weather_main, weather_desc, temp_in, temp_out, humid_in, humid_out));
+	weatherRecord.write("{},{},{},{},{},{},{}\n".format(time, weather_main, weather_desc, temp_in, temp_out, humid_in, humid_out));
+	print("{},{},{},{},{},{},{}\n".format(time, weather_main, weather_desc, temp_in, temp_out, humid_in, humid_out));
 
 	# close file
 	weatherRecord.close()
 
 # main
-record_weather(False)
+record_weather()
