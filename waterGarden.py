@@ -2,7 +2,7 @@
 
 from Adafruit_CharLCD import Adafruit_CharLCD
 from datetime import datetime
-from time import sleep
+from time import sleep, strftime
 import Adafruit_DHT, requests
 import RPi.GPIO as GPIO
 
@@ -55,7 +55,7 @@ duration = 30
 # if currently raining, no need to water
 curr_weather = get_weather_description()
 
-if curr_weather is 'Thunderstorm' or 'Drizzle' or 'Rain' or 'Snow':
+if curr_weather is "Thunderstorm" or curr_weather is "Drizzle" or curr_weather is "Rain" or curr_weather is "Snow":
 	lcd_message("No water needed\n{}".format(curr_weather))
 	print("Garden not watered due to current weather conditions, {}".format(curr_weather))
 else:
@@ -64,5 +64,6 @@ else:
 		lcd_message("***VALVE OPEN***\nTime left: {}".format(duration - i))
 		sleep(60) # wait one minute
 	close_valve()
-	lcd_message("**VALVE CLOSED**")
+	now = datetime.now().strftime('%a %b %d %H:%M')
+	lcd_message("Last watered at\n{}".format(now))
 

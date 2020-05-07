@@ -96,3 +96,7 @@ def record_weather():
 
 # main
 record_weather()
+
+now = datetime.now().strftime('%a %b %d %H:%M')
+lcd.clear()
+lcd.message("Weather recorded\n{}".format(now))
