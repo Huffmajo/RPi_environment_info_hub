@@ -55,7 +55,7 @@ duration = 30
 # if currently raining, no need to water
 curr_weather = get_weather_description()
 
-if curr_weather is "Thunderstorm" or curr_weather is "Drizzle" or curr_weather is "Rain" or curr_weather is "Snow":
+if curr_weather == "Thunderstorm" or curr_weather == "Drizzle" or curr_weather == "Rain" or curr_weather == "Snow":
 	lcd_message("No water needed\n{}".format(curr_weather))
 	print("Garden not watered due to current weather conditions, {}".format(curr_weather))
 else:

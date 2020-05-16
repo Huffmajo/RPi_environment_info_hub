@@ -24,3 +24,21 @@ Sunday May 03 09:24:00,Clear,clear sky,50.0,50.702,39.0,66
 Wednesday May 06 07:55:11,Clear,clear sky,51.0,58.316,37.0,38
 Wednesday May 06 07:59:14,Clear,clear sky,53.0,58.316,36.0,38
 Thursday May 07 03:58:14,Clear,clear sky,51.0,72.644,37.0,26
+Friday May 08 12:00:09,Clear,clear sky,56.0,62.888,34.0,22
+Friday May 08 12:00:08,Clear,clear sky,52.0,74.354,37.0,27
+Saturday May 09 12:00:08,Clear,clear sky,55.0,68.72,35.0,30
+Saturday May 09 12:00:09,Clear,clear sky,54.0,79.466,35.0,29
+Sunday May 10 12:00:09,Clear,clear sky,56.0,70.484,34.0,42
+Sunday May 10 12:00:08,Clear,clear sky,56.0,76.946,34.0,41
+Monday May 11 12:00:08,Clouds,overcast clouds,56.0,64.778,34.0,54
+Monday May 11 12:00:09,Clear,clear sky,57.0,66.056,33.0,63
+Tuesday May 12 12:00:08,Clear,clear sky,55.0,50.954,36.0,93
+Tuesday May 12 12:00:08,Rain,light rain,52.0,58.82,37.0,82
+Wednesday May 13 12:00:08,Rain,light rain,52.0,52.61,38.0,81
+Wednesday May 13 12:00:08,Clouds,overcast clouds,50.0,57.344,39.0,71
+Thursday May 14 12:00:08,Rain,light rain,52.0,51.674,37.0,81
+Thursday May 14 12:00:08,Rain,light rain,50.0,54.122,38.0,81
+Friday May 15 12:00:08,Rain,heavy intensity rain,51.0,51.818,37.0,93
+Friday May 15 12:00:08,Clouds,overcast clouds,50.0,58.928,39.0,67
+Saturday May 16 12:00:08,Clouds,scattered clouds,52.0,55.13,38.0,67
+Saturday May 16 12:00:09,Rain,light rain,53.0,59.144,37.0,87
