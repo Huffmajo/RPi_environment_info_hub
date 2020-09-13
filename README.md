@@ -17,3 +17,6 @@ Main componenets installed in an ABS project box. Knob and button on the side co
 - Push the logged weather data to a webpage for long term monitoring of weather and watering habits. ChartJS could be used to attractively present the information.
 - Photos of the wiring and inside of the enclosure.
 - Step-by-step tutorial for others to follow.
+
+####Sources
+Air quaility information sourced from World Air Quality Index Project via https://aqicn.org/api/

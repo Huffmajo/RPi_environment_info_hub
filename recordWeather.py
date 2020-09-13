@@ -33,6 +33,12 @@ root_url = 'http://api.openweathermap.org/data/2.5/weather?appid='
 city_id = '5713376'
 full_url = root_url + api_key + '&id=' + city_id
 
+# initialize data for AQI API
+aqi_key = 'b98653377cd7799efd101c04396a1e9f753e9730'
+root_aqi_url = 'https://api.waqi.info/feed/'
+city = 'beaverton'
+full_aqi_url = root_aqi_url + city + '/?token=' + aqi_key
+
 # returns date, day and time
 def get_current_time():
 	return datetime.now().strftime('%A\n%b %d %I:%M:%S')
@@ -59,11 +65,34 @@ def get_api_weather():
 	# request API for weather data
 	response = requests.get(full_url)
 
-	# store response of weather data
+	# return weather json object
 	respo = response.json()
-	weather = respo['main']
-
 	return respo
+
+# returns air quality info from AQICN API
+def get_aqi():
+	# request API for AQI data
+	response = requests.get(full_aqi_url)
+
+	# return AQI json object
+	respo = response.json()
+	return respo
+
+# returns description of air quality based on AQI
+def aqi_level(aqi):
+	level = "Hazardous"
+
+	if (aqi > 200):
+		level = "Very unhealthy"
+	elif (aqi > 150):
+		level = "Unhealthy"
+	elif (aqi > 100):
+		level = "Unhealthy FSG"
+	elif (aqi > 50):
+		level = "Moderate"
+	else:
+		level = "Good"
+	return level
 
 # get and write weather info to text log
 def record_weather():
@@ -87,16 +116,26 @@ def record_weather():
 	# get weather description
 	weather_desc = weather_out['weather'][0]['description']
 
+	# get AQI info
+	aqi_response = get_aqi()
+	aqi = aqi_response['data']['aqi']
+	aqi_desc = aqi_level(aqi)
+
 	# write all info to file
-	weatherRecord.write("{},{},{},{},{},{},{}\n".format(time, weather_main, weather_desc, temp_in, temp_out, humid_in, humid_out));
-	print("{},{},{},{},{},{},{}\n".format(time, weather_main, weather_desc, temp_in, temp_out, humid_in, humid_out));
+	weatherRecord.write("{},{},{},{},{},{},{},{},{}\n".format(time, weather_main, weather_desc, temp_in, temp_out, humid_in, humid_out, aqi, aqi_desc));
+	print("{},{},{},{},{},{},{},{},{}\n".format(time, weather_main, weather_desc, temp_in, temp_out, humid_in, humid_out, aqi, aqi_desc));
 
 	# close file
 	weatherRecord.close()
 
+	# show AQI on screen
+	lcd.clear()
+	lcd.message("AQI: {}\n{}".format(aqi, aqi_desc))
+
 # main
 record_weather()
 
-now = datetime.now().strftime('%a %b %d %H:%M')
-lcd.clear()
-lcd.message("Weather recorded\n{}".format(now))
+# show air quality
+#now = datetime.now().strftime('%a %b %d %H:%M')
+#lcd.clear()
+#lcd.message("Weather recorded\n{}".format(now))
